@@ -45,10 +45,14 @@
             :size="70">
           </v-progress-circular>
           <img v-if="elOtroJugador.jugada !== ''" class="jugada-img" :src="'/static/jugadas/' + elOtroJugador.jugada + '.png'" alt="">
-          <p class="mensaje-de-ganador">{{ mensajeDelGanador | MaysPrimera }}</p>
+          <p class="mensaje-del-ganador" v-if="!hayGanador">{{ mensajeDelGanador | MaysPrimera }}</p>
+          <p class="mensaje-del-ganador padding" v-else>{{ mensajeFinal }} {{ mensajeDelGanador | MaysPrimera }}</p>
         </div>
-        <v-btn v-show="!cargando" color="primary" dark @click="reiniciarJuego()">
-          Jugar de nuevo
+        <v-btn v-show="!cargando" v-if="!hayGanador" color="primary" dark @click="reiniciarJuego()">
+          !Volver a jugar!
+        </v-btn>
+        <v-btn v-show="!cargando" v-else color="primary" dark @click="inicializarJuego()">
+          !Jugar de nuevo!
         </v-btn>
       </div>
     </section>
@@ -196,6 +200,14 @@ export default {
   computed: {
     user () {
       return this.$store.getters.user
+    },
+    hayGanador () {
+      return this.jugador.puntos === 10 || this.elOtroJugador.puntos === 10
+    },
+    mensajeFinal () {
+      if (this.jugador.puntos === 10 || this.elOtroJugador.puntos === 10) {
+        return '!Fin de la partida!'
+      }
     }
   },
   watch: {
@@ -206,6 +218,7 @@ export default {
       if (this.elOtroJugador.yaJugue && val) {
         this.cargando = false
         this.devolverMensajeDelGanador()
+        this.actualizarPuntos()
       }
       if (!this.elOtroJugador.yaJugue && !val) {
         this.mensajeDelGanador = ''
@@ -218,6 +231,7 @@ export default {
       if (this.jugador.yaJugue && val) {
         this.cargando = false
         this.devolverMensajeDelGanador()
+        this.actualizarPuntos()
       }
       if (!this.jugador.yaJugue && !val) {
         this.mensajeDelGanador = ''
@@ -233,16 +247,6 @@ export default {
       // Sino existe el otro jugador se abre la partida al publico
       if (val === '') {
         this.partida.update({ yaEmpezo: false })
-      }
-    },
-    'jugador.puntos' (val) {
-      if (val === 10) {
-        this.inicializarJuego()
-      }
-    },
-    'elOtroJugador.puntos' (val) {
-      if (val === 10) {
-        this.inicializarJuego()
       }
     }
   },
@@ -270,6 +274,8 @@ export default {
     devolverMensajeDelGanador () {
       const jugadas = [['empataste', 'perdiste', 'ganaste'], ['ganaste', 'empataste', 'perdiste'], ['perdiste', 'ganaste', 'empataste']]
       this.mensajeDelGanador = jugadas[this.devolverJugadaEnNumero(this.jugador.jugada)][this.devolverJugadaEnNumero(this.elOtroJugador.jugada)]
+    },
+    actualizarPuntos () {
       if (this.mensajeDelGanador === 'ganaste') {
         this.partida.child(this.nombreObj).update({
           puntos: this.jugador.puntos + 1
@@ -479,12 +485,16 @@ p {
   justify-content: center;
   align-items: center;
 }
-.area-de-juego .mensaje-final .mensaje-de-ganador {
+.area-de-juego .mensaje-final .mensaje-del-ganador {
   position: absolute;
   background: rgb(33,33,33, 0.95);
   color: white;
   width: 100%;
   font-size: 40px;
+  animation: entrada-mensaje-ganador .2s ease-out forwards;
+}
+.area-de-juego .mensaje-final .mensaje-del-ganador.padding {
+  padding: 10px 0;
 }
 .area-de-juego .mensaje-final .jugadas {
   display: flex;
@@ -582,6 +592,16 @@ p {
     display: none;
   }
 }
+
+@keyframes entrada-mensaje-ganador {
+  0% {
+    transform: translateY(300px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
 @media (max-width: 370px) {
   .tablero-y-tiempo {
     padding-top: 10px;

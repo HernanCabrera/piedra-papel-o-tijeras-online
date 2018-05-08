@@ -15,7 +15,7 @@
                   <v-flex xs12>
                     <v-text-field
                       name="email"
-                      label="Mail"
+                      label="Correo electronico"
                       id="email"
                       v-model="email"
                       type="email"
@@ -26,7 +26,7 @@
                   <v-flex xs12>
                     <v-text-field
                       name="password"
-                      label="Password"
+                      label="Contraseña"
                       id="password"
                       v-model="password"
                       type="password"
@@ -35,8 +35,13 @@
                 </v-layout>
                 <v-layout row>
                   <v-flex xs12>
+                    ¿Aun no tenes cuenta? <router-link to="/signup">¡Registrate aca!</router-link>
+                  </v-flex>
+                </v-layout>
+                <v-layout row>
+                  <v-flex xs12>
                     <v-btn type="submit" :disabled="loading" :loading="loading">
-                      Sign in
+                      Iniciar sesión
                        <span slot="loader" class="custom-loader">
                         <v-icon light>cached</v-icon>
                        </span>
