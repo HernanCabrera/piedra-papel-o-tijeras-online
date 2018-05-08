@@ -16,7 +16,7 @@ new Vue({
   render: h => h(App),
   created () {
     firebase.initializeApp({
-      // tu configuracion a firebase
+      // tu coneccion a firebase
     })
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {

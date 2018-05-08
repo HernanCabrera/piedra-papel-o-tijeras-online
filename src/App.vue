@@ -63,12 +63,14 @@
     computed: {
       menuItems () {
         let menuItems = [
+          { icon: 'accessibility', title: 'Creador', link: '/creador' },
           { icon: 'face', title: 'Registrarse', link: '/signup' },
           { icon: 'lock_open', title: 'Ingresar', link: '/signin' }
         ]
         if (this.userIsAuthenticated) {
           menuItems = [
-            { icon: 'supervisor_account', title: 'Encontrar partida', link: '/partidas' }
+            { icon: 'supervisor_account', title: 'Encontrar partida', link: '/partidas' },
+            { icon: 'accessibility', title: 'Creador', link: '/creador' }
           ]
         }
         return menuItems

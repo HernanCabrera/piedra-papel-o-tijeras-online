@@ -8,6 +8,7 @@ import AuthGuard from './auth-guard'
 import Partidas from '@/components/Partidas/Partidas'
 import Partida from '@/components/Partidas/Partida'
 import CrearPartida from '@/components/Partidas/CrearPartida'
+import Creador from '@/components/Creador'
 
 Vue.use(Router)
 
@@ -26,6 +27,11 @@ export default new Router({
       path: '/signin',
       name: 'Signin',
       component: Signin
+    },
+    {
+      path: '/creador',
+      name: 'Creador',
+      component: Creador
     },
     {
       path: '/partidas',

@@ -2,24 +2,6 @@
 
 Una aplicacion para jugar al piedra, papel o tijeras online con tus amigos
 
-## Configurando firebase
-
-``` bash
-# agregando tu coneccion a firebase en main.js
-firebase.initializeApp({
-  // tu configuracion a firebase
-})
-
-# cambiando las reglas en firebase (database - realtime)
-{
-  "rules": {
-    ".read": "true",
-    ".write": "auth != null"
-  }
-}
-```
-
-
 ## Build Setup
 
 ``` bash

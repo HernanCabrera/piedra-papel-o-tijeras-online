@@ -1,8 +1,8 @@
 {
   "name": "piedra-papel-o-tijera-online",
   "version": "1.0.0",
-  "description": "A dev meetup applicatin built with Vue + Vuetify + Firebase",
-  "author": "Maximilian Schwarzmüller <business@academind.com>",
+  "description": "Una aplicacion para jugar al piedra, papel o tijeras con tus amigos de manera online",
+  "author": "Hernan Cabrera <mauricioh_cabrera@hotmail.com>",
   "private": true,
   "scripts": {
     "dev": "node build/dev-server.js",
