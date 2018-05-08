@@ -8,7 +8,8 @@ export const store = new Vuex.Store({
   state: {
     user: null,
     loading: false,
-    error: null
+    error: null,
+    llavePartida: null
   },
   mutations: {
     setUser (state, payload) {
@@ -19,6 +20,9 @@ export const store = new Vuex.Store({
     },
     setError (state, payload) {
       state.error = payload
+    },
+    setLlavePartida (state, payload) {
+      state.llavePartida = payload
     },
     clearError (state) {
       state.error = null
@@ -74,6 +78,32 @@ export const store = new Vuex.Store({
     },
     clearError ({commit}) {
       commit('clearError')
+    },
+    crearPartida ({commit, getters}, payload) {
+      const partida = {
+        titulo: payload.titulo,
+        yaEmpezo: false,
+        jugador1: {
+          jugada: '',
+          yaJugo: false,
+          jugadorId: getters.user.id,
+          puntos: 0
+        },
+        jugador2: {
+          jugada: '',
+          yaJugo: false,
+          jugadorId: '',
+          puntos: 0
+        }
+      }
+      firebase.database().ref('partidas').push(partida)
+        .then((data) => {
+          const llavePartida = data.key
+          commit('setLlavePartida', llavePartida)
+        })
+        .catch((error) => {
+          console.log(error)
+        })
     }
   },
   getters: {
@@ -85,6 +115,9 @@ export const store = new Vuex.Store({
     },
     error (state) {
       return state.error
+    },
+    llavePartida (state) {
+      return state.llavePartida
     }
   }
 })

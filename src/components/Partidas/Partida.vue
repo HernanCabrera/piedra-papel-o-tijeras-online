@@ -1,53 +1,54 @@
 <template>
   <main>
-    <!-- Si el otro jugador no existe. no se muestra el tablero -->
-    <div class="tablero-de-puntos" v-show="elOtroJugador.jugadorId !== ''">
-      <div class="contenedor-puntos-jugador izquierda">
-        <div class="palito izquierda"></div>
-        <div class="barra izquierda"></div>
-        <div class="contenedor-puntos izquierda">
-          <p class="puntos izquierda">{{ jugador.puntos }}</p>
-        </div>
-      </div>
-      <div class="contenedor-puntos-jugador derecha">
-        <div class="palito derecha"></div>
-        <div class="barra derecha"></div>
-        <div class="contenedor-puntos derecha">
-          <p class="puntos derecha">{{ elOtroJugador.puntos }}</p>
-        </div>
-      </div>
-    </div>
+    <section class="area-de-juego contenedor" v-if="cargando || elOtroJugador.jugadorId !== ''">
+      <app-tablero-de-puntos
+        :jugador="jugador"
+        :elOtroJugador="elOtroJugador">
+      </app-tablero-de-puntos>
 
-    <section class="area-de-juego contenedor" v-if="primeraCarga && elOtroJugador.jugadorId !== ''">
-      <div v-if="!jugador.yaJugue" class="jugadas">
+      <div v-if="!jugador.yaJugo" class="contenedor-juega">
         <div v-if="!cargando" class="contenedor-mensaje-jugar">
-          <p class="mensaje-juega">Juega!</p>
+          <p class="mensaje-jugar">Juega!</p>
         </div>
-        <div class="piedra contenedor-jugada" @click="cargarJugada('piedra')">
-          <img src="/static/jugadas/piedra.png">
-        </div>
-        <div class="papel contenedor-jugada" @click="cargarJugada('papel')">
-          <img src="/static/jugadas/papel.png" >
-        </div>
-        <div class="tijera contenedor-jugada" @click="cargarJugada('tijera')">
-          <img src="/static/jugadas/tijera.png" >
-        </div>
+        <ul class="jugadas-disponibles">
+          <li class="piedra jugada" @click="cargarJugada('piedra')">
+            <img class="img-jugada" src="/static/jugadas/piedra.png">
+          </li>
+          <li class="papel jugada" @click="cargarJugada('papel')">
+            <img class="img-jugada" src="/static/jugadas/papel.png" >
+          </li>
+          <li class="tijera jugada" @click="cargarJugada('tijera')">
+            <img class="img-jugada" src="/static/jugadas/tijera.png" >
+          </li>
+        </ul>
       </div>
-      <div v-else class="mensaje-final">
-        <div class="jugadas">
-          <img v-if="jugador.jugada !== ''" class="jugada-img" :src="'/static/jugadas/' + jugador.jugada + '.png'" alt="">
-          <p class="jugada-texto-vs">Vs</p>
+
+      <div v-else class="contenedor-jugadas">
+        <div class="jugada-jugador">
+          <img class="jugada-img" :src="'/static/jugadas/' + jugador.jugada + '.png'" alt="">
+        </div>
+        <p class="jugada-texto-vs">Vs</p>
+        <div class="jugada-elotrojugador">
           <v-progress-circular
-            v-show="cargando"
+            v-if="!elOtroJugador.yaJugo"
             indeterminate
             class="primary--text"
             :width="7"
             :size="70">
           </v-progress-circular>
-          <img v-if="elOtroJugador.jugada !== ''" class="jugada-img" :src="'/static/jugadas/' + elOtroJugador.jugada + '.png'" alt="">
-          <p class="mensaje-del-ganador" v-if="!hayGanador">{{ mensajeDelGanador | MaysPrimera }}</p>
-          <p class="mensaje-del-ganador padding" v-else>{{ mensajeFinal }} {{ mensajeDelGanador | MaysPrimera }}</p>
+          <img 
+            v-else 
+            class="jugada-img" :src="'/static/jugadas/' + elOtroJugador.jugada + '.png'" 
+            alt="">
         </div>
+        <div class="mensaje-final" v-if="elOtroJugador.yaJugo">
+          <p class="mensaje-del-ganador" v-if="!hayGanador">{{ mensajeDelGanador | MaysPrimera }}</p>
+          <p class="mensaje-del-ganador padding" v-else>{{ mensajeFinal }} <br>{{ mensajeDelGanador | MaysPrimera }}</p>
+        </div>
+      </div>
+
+      
+      <div class="contenedor-botones" v-if="jugador.yaJugo && elOtroJugador.yaJugo">
         <v-btn v-show="!cargando" v-if="!hayGanador" color="primary" dark @click="reiniciarJuego()">
           !Volver a jugar!
         </v-btn>
@@ -55,38 +56,42 @@
           !Jugar de nuevo!
         </v-btn>
       </div>
+
     </section>
-    <div class="contenedor-spinner contenedor" v-else>
+
+    <section v-else class="contenedor-esperando-al-rival contenedor">
       <v-progress-circular
         indeterminate
         class="primary--text"
         :width="7"
         :size="70">
       </v-progress-circular>
-      <p class="texto-esperando">Esperando al rival...</p>
-    </div>
+      <p class="texto-esperando-al-rival">Esperando al rival...</p>
+    </section>
+
   </main>
 </template>
 
 
 <script>
 import * as firebase from 'firebase'
+import AppTableroDePuntos from './../TableroDePuntos'
 export default {
   props: ['id'],
+  components: { AppTableroDePuntos },
   data () {
     return {
-      primeraCarga: false,
-      partida: firebase.database().ref('partidas/' + this.id),
+      partidaRef: firebase.database().ref('partidas/' + this.id),
       jugador: {
         jugada: '',
         jugadorId: '',
-        yaJugue: false,
+        yaJugo: false,
         puntos: 0
       },
       elOtroJugador: {
         jugada: '',
         jugadorId: '',
-        yaJugue: false,
+        yaJugo: false,
         puntos: 0
       },
       nombreObj: '',
@@ -94,75 +99,36 @@ export default {
       mensajeDelGanador: '',
       cargando: false,
       error: false,
-      intervalo: null,
-      checkbox: true,
-      radioGroup: 1,
-      switch1: true
+      intervalo: null
     }
   },
   created () {
-    this.partida.once('value')
+    this.partidaRef.once('value')
     .then((data) => {
       const obj = data.val()
       // determinar si el usuario puede o no jugar
       if (obj.jugador1.jugadorId === '' || obj.jugador1.jugadorId === this.user.id) {
         this.nombreObj = 'jugador1'
+        this.nombreObj2 = 'jugador2'
       } else if (obj.jugador2.jugadorId === '' || obj.jugador2.jugadorId === this.user.id) {
         this.nombreObj = 'jugador2'
+        this.nombreObj2 = 'jugador1'
       } else {
         this.error = true
         this.$router.push('/partidas')
       }
       // si el usuario puede jugar se carga las funciones para real time
       if (this.nombreObj !== '') {
-        if (this.nombreObj === 'jugador1') {
-          this.nombreObj2 = 'jugador2'
-        } else {
-          this.nombreObj2 = 'jugador1'
-        }
-        this.partida.child(this.nombreObj).update({
+        this.partidaRef.child(this.nombreObj).update({
           jugadorId: this.user.id
         })
-        this.partida.on('child_added', snapshot => {
-          // Cargar jugadas del otro jugador al iniciar la coneccion
-          if (typeof snapshot.val().jugadorId !== 'undefined') {
-            if (snapshot.val().jugadorId !== this.user.id) {
-              this.elOtroJugador.jugada = snapshot.val().jugada
-              this.elOtroJugador.jugadorId = snapshot.val().jugadorId
-              this.elOtroJugador.yaJugue = snapshot.val().yaJugue
-              this.elOtroJugador.puntos = snapshot.val().puntos
-            } else {
-              this.jugador.jugada = snapshot.val().jugada
-              this.jugador.jugadorId = snapshot.val().jugadorId
-              this.jugador.yaJugue = snapshot.val().yaJugue
-              this.jugador.puntos = snapshot.val().puntos
-            }
-          }
+        this.partidaRef.on('child_added', snapshot => {
+          this.cargarDatos(snapshot)
         })
-        this.partida.on('child_removed', snapshot => {
-          if (typeof snapshot.key !== 'undefined') {
-            if (typeof snapshot.key === 'string') {
-              firebase.database().ref('partidas').child(this.id).remove()
-            }
-          }
+        this.partidaRef.on('child_changed', snapshot => {
+          this.cargarDatos(snapshot)
         })
-        this.partida.on('child_changed', snapshot => {
-          // Actualizar jugadas de ambos jugadores
-          if (typeof snapshot.val().jugadorId !== 'undefined') {
-            if (snapshot.val().jugadorId !== this.user.id) {
-              this.elOtroJugador.jugada = (typeof snapshot.val().jugada === 'undefined') ? '' : snapshot.val().jugada
-              this.elOtroJugador.jugadorId = (typeof snapshot.val().jugadorId === 'undefined') ? '' : snapshot.val().jugadorId
-              this.elOtroJugador.yaJugue = (typeof snapshot.val().yaJugue === 'undefined') ? false : snapshot.val().yaJugue
-              this.elOtroJugador.puntos = (typeof snapshot.val().puntos === 'undefined') ? false : snapshot.val().puntos
-            } else {
-              this.jugador.jugada = snapshot.val().jugada
-              this.jugador.jugadorId = snapshot.val().jugadorId
-              this.jugador.yaJugue = snapshot.val().yaJugue
-              this.jugador.puntos = snapshot.val().puntos
-            }
-          }
-        })
-        this.primeraCarga = true
+        this.cargando = false
       }
     })
     .catch(
@@ -174,27 +140,28 @@ export default {
   },
   destroyed () {
     if (!this.error) {
-      this.partida.child(this.nombreObj).update({
+      this.partidaRef.off()
+      this.partidaRef.child(this.nombreObj).update({
         jugadorId: '',
         jugada: '',
-        yaJugue: false,
+        yaJugo: false,
         puntos: 0
       })
-      this.partida.child(this.nombreObj2).update({
+      this.partidaRef.child(this.nombreObj2).update({
         jugada: '',
-        yaJugue: false,
+        yaJugo: false,
         puntos: 0
       })
-      this.partida.once('value')
-      .then((data) => {
-        const obj = data.val()
-        /* Si las id de los jugadores no existe se elimina la partida */
-        if (obj.jugador1.jugadorId === '' && obj.jugador2.jugadorId === '') {
-          setTimeout(() => {
-            firebase.database().ref('partidas').child(this.id).remove()
-          }, 100)
-        }
-      })
+      this.jugador.jugada = ''
+      this.jugador.jugadorId = ''
+      this.jugador.yaJugo = false
+      this.jugador.puntos = 0
+      this.elOtroJugador.jugada = ''
+      this.elOtroJugador.yaJugo = false
+      this.elOtroJugador.puntos = 0
+      if (this.jugador.jugadorId === '' && this.elOtroJugador.jugadorId === '') {
+        firebase.database().ref('partidas').child(this.id).remove()
+      }
     }
   },
   computed: {
@@ -211,42 +178,34 @@ export default {
     }
   },
   watch: {
-    'jugador.yaJugue' (val) {
-      if (val) {
-        this.cargando = true
-      }
-      if (this.elOtroJugador.yaJugue && val) {
-        this.cargando = false
+    'jugador.yaJugo' (val) {
+      if (this.elOtroJugador.yaJugo && val) {
         this.devolverMensajeDelGanador()
         this.actualizarPuntos()
       }
-      if (!this.elOtroJugador.yaJugue && !val) {
+      if (!this.elOtroJugador.yaJugo && !val) {
         this.mensajeDelGanador = ''
       }
     },
-    'elOtroJugador.yaJugue' (val) {
-      if (val) {
-        this.cargando = true
-      }
-      if (this.jugador.yaJugue && val) {
-        this.cargando = false
+    'elOtroJugador.yaJugo' (val) {
+      if (this.jugador.yaJugo && val) {
         this.devolverMensajeDelGanador()
         this.actualizarPuntos()
       }
-      if (!this.jugador.yaJugue && !val) {
+      if (!this.jugador.yaJugo && !val) {
         this.mensajeDelGanador = ''
       }
     },
     'jugador.jugadorId' (val) {
       /* Si ambos existen se cierra la partida al publico */
       if (val !== '' && this.elOtroJugador.jugadorId !== '') {
-        this.partida.update({ yaEmpezo: true })
+        this.partidaRef.update({ yaEmpezo: true })
       }
     },
     'elOtroJugador.jugadorId' (val) {
       // Sino existe el otro jugador se abre la partida al publico
       if (val === '') {
-        this.partida.update({ yaEmpezo: false })
+        this.partidaRef.update({ yaEmpezo: false })
       }
     }
   },
@@ -257,9 +216,9 @@ export default {
   },
   methods: {
     cargarJugada (str) {
-      this.partida.child(this.nombreObj).update({
+      this.partidaRef.child(this.nombreObj).update({
         jugada: str,
-        yaJugue: true
+        yaJugo: true
       })
     },
     devolverJugadaEnNumero (str) {
@@ -277,45 +236,49 @@ export default {
     },
     actualizarPuntos () {
       if (this.mensajeDelGanador === 'ganaste') {
-        this.partida.child(this.nombreObj).update({
+        this.partidaRef.child(this.nombreObj).update({
           puntos: this.jugador.puntos + 1
         })
       } else if (this.mensajeDelGanador === 'perdiste') {
-        this.partida.child(this.nombreObj2).update({
+        this.partidaRef.child(this.nombreObj2).update({
           puntos: this.elOtroJugador.puntos + 1
         })
       }
     },
     inicializarJuego () {
-      this.partida.child('jugador1').update({
+      this.partidaRef.child(this.nombreObj).update({
         jugada: '',
-        yaJugue: false,
+        yaJugo: false,
         puntos: 0
       })
-      this.partida.child('jugador2').update({
+      this.partidaRef.child(this.nombreObj2).update({
         jugada: '',
-        yaJugue: false,
+        yaJugo: false,
         puntos: 0
       })
     },
     reiniciarJuego () {
-      this.partida.child('jugador1').update({
+      this.partidaRef.child(this.nombreObj).update({
         jugada: '',
-        yaJugue: false
+        yaJugo: false
       })
-      this.partida.child('jugador2').update({
+      this.partidaRef.child(this.nombreObj2).update({
         jugada: '',
-        yaJugue: false
+        yaJugo: false
       })
     },
-    copiarId () {
-      const textArea = document.createElement('textarea')
-      textArea.value = this.id
-      document.body.appendChild(textArea)
-      textArea.focus()
-      textArea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textArea)
+    cargarDatos (snapshot) {
+      if (typeof snapshot.val().jugadorId !== 'undefined') {
+        if (snapshot.val().jugadorId !== this.user.id) {
+          this.elOtroJugador = {
+            ...snapshot.val()
+          }
+        } else {
+          this.jugador = {
+            ...snapshot.val()
+          }
+        }
+      }
     }
   }
 }
@@ -326,112 +289,18 @@ export default {
 p {
   margin: 0;
 }
-/*PUNTOS*/
-.tablero-de-puntos {
-  opacity: 0;
-  animation: aparecer 1s ease-in forwards;
+
+/* .area-de-juego {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 30px;
-}
-.tablero-de-puntos .contenedor-puntos-jugador {
-  width: 64px;
+} */
+/*CONTENEDOR-JUEGA*/ 
+.contenedor-juega {
+  margin: 10px 0;
   position: relative;
 }
-.tablero-de-puntos .contenedor-puntos-jugador .palito {
-  width: 12px;
-  height: 36px;
-  border-radius: 15px;
-  position: absolute;
-  top: -17px;
-  border: 3px solid #333333;
-}
-.tablero-de-puntos .contenedor-puntos-jugador .barra {
-  width: 100%;
-  height: 31px;
-}
-.tablero-de-puntos .contenedor-puntos-jugador .contenedor-puntos {
-  width: 100%;
-  height: 68px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.tablero-de-puntos .contenedor-puntos-jugador .contenedor-puntos .puntos {
-  font-size: 44px;
-  line-height: 1;
-}
-/*PUNTOS*/
-
-/*IZQUIERDA*/
-.tablero-de-puntos .contenedor-puntos-jugador.izquierda {
-}
-.tablero-de-puntos .contenedor-puntos-jugador .palito.izquierda {
-  background: #ff7876;
-  right: 15px;
-}
-.tablero-de-puntos .contenedor-puntos-jugador .barra.izquierda {
-  background: #ffe49c;
-  border-top-left-radius: 10px;
-  border-top: 3px solid #333333;
-  border-right: 1.5px solid #333333;
-  border-bottom: 3px solid #333333;
-  border-left: 3px solid #333333;
-}
-.tablero-de-puntos .contenedor-puntos-jugador .contenedor-puntos.izquierda {
-  background: #d1d3d4;
-  border-bottom-left-radius: 10px;
-  border-top: 0px solid #333333;
-  border-right: 1.5px solid #333333;
-  border-bottom: 3px solid #333333;
-  border-left: 3px solid #333333;
-}
-.tablero-de-puntos .contenedor-puntos-jugador .contenedor-puntos .puntos.izquierda {
-  color: #a7a9ac;
-}
-/*IZQUIERDA*/
-
-/*DERECHA*/
-.tablero-de-puntos .contenedor-puntos-jugador.derecha {
-}
-.tablero-de-puntos .contenedor-puntos-jugador .palito.derecha {
-  background: #ff5e5b;
-  left: 15px;
-}
-.tablero-de-puntos .contenedor-puntos-jugador .barra.derecha {
-  background: #ffc72d;
-  border-top-right-radius: 10px;
-  border-top: 3px solid #333333;
-  border-right: 3px solid #333333;
-  border-bottom: 3px solid #333333;
-  border-left: 1.5px solid #333333;
-}
-.tablero-de-puntos .contenedor-puntos-jugador .contenedor-puntos.derecha {
-  background: #bfc1c2;
-  border-bottom-right-radius: 10px;
-  border-top: 0px solid #333333;
-  border-right: 3px solid #333333;
-  border-bottom: 3px solid #333333;
-  border-left: 1.5px solid #333333;
-}
-.tablero-de-puntos .contenedor-puntos-jugador .contenedor-puntos .puntos.derecha {
-  color: #909293;
-}
-/*DERECHA*/
-
-
-.area-de-juego {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.area-de-juego .jugadas {
-  display: flex;
-  margin: 30px 0;
-  position: relative;
-}
-.area-de-juego .jugadas .contenedor-mensaje-jugar {
+.contenedor-juega .contenedor-mensaje-jugar {
   position: absolute;
   display: flex;
   justify-content: center;
@@ -440,8 +309,7 @@ p {
   width: 100%;
   overflow: hidden;
 }
-
-.area-de-juego .jugadas .contenedor-mensaje-jugar .mensaje-juega {
+.contenedor-juega .contenedor-mensaje-jugar .mensaje-jugar {
   font-size: 64px;
   line-height: 1.2;
   width: 100%;
@@ -451,73 +319,96 @@ p {
   transform: translateY(-200px);
   animation: entrada-mensaje-juega 1.2s ease-in 1s forwards;
 }
-
-.area-de-juego .jugadas .contenedor-jugada {
+.contenedor-juega .jugadas-disponibles {
+  display: flex;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
+}
+.contenedor-juega .jugadas-disponibles .jugada {
   max-width: 33%;
 }
-
-.area-de-juego .jugadas .contenedor-jugada img {
+.contenedor-juega .jugadas-disponibles .jugada .img-jugada {
   cursor: pointer;
   transition: .3s;
   margin: 0 5px;
   max-width: 100%;
 }
-.area-de-juego .jugadas .contenedor-jugada img:hover {
+.contenedor-juega .jugadas-disponibles .jugada .img-jugada:hover {
   transform: scale(1.05);
 }
-.area-de-juego .jugadas .contenedor-jugada img {
-  z-index: 2;
-}
-.area-de-juego .jugadas .piedra {
+.contenedor-juega .jugadas-disponibles .piedra {
   animation: piedra .5s ease-in forwards;
 }
-.area-de-juego .jugadas .papel {
+.contenedor-juega .jugadas-disponibles .papel {
   animation: papel .5s ease-in forwards;
 }
-.area-de-juego .jugadas .tijera {
+.contenedor-juega .jugadas-disponibles .tijera {
   animation: tijera .5s ease-in forwards;
 }
-.area-de-juego .mensaje-final {
-  text-align: center;
-  font-size: 32px;
+/*CONTENEDOR-JUEGA*/
+
+/*CONTENEDOR JUGADAS*/
+.contenedor-jugadas {
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
+  position: relative;
+  margin: 10px 0;
 }
-.area-de-juego .mensaje-final .mensaje-del-ganador {
-  position: absolute;
-  background: rgb(33,33,33, 0.95);
-  color: white;
-  width: 100%;
-  font-size: 40px;
-  animation: entrada-mensaje-ganador .2s ease-out forwards;
+.contenedor-jugadas .jugada-jugador {
+
 }
-.area-de-juego .mensaje-final .mensaje-del-ganador.padding {
-  padding: 10px 0;
+.contenedor-jugadas .jugada-jugador .jugada-img,
+.contenedor-jugadas .jugada-elotrojugador .jugada-img {
+  max-width: 100%;
 }
-.area-de-juego .mensaje-final .jugadas {
-  display: flex;
-  align-items: center;
-}
-.area-de-juego .mensaje-final .jugadas .jugada-img {
-  max-width: 40%;
-}
-.area-de-juego .mensaje-final .jugadas .jugada-texto-vs {
+.contenedor-jugadas .jugada-texto-vs {
   margin: 0 20px;
   font-weight: 900;
   font-size: 48px;
 }
+.contenedor-jugadas .jugada-elotrojugador {
 
-.contenedor-spinner {
+}
+
+.contenedor-jugadas .mensaje-final {
+  position: absolute;
+  background: rgb(33,33,33, 0.95);
+  color: white;
+  /* max-width: 400px; */
+  width: 100%;
+  font-size: 64px;
+  text-align: center;
+  line-height: 1.2;
+  animation: entrada-mensaje-ganador .2s ease-out forwards;
+}
+.contenedor-jugadas .mensaje-del-ganador {
+
+}
+.contenedor-jugadas .mensaje-del-ganador.padding {
+  margin: 10px 0;
+  font-size: 36px;
+  line-height: 1.2;
+}
+
+/*CONTENEDOR JUGADAS*/
+
+/*CONTENEDOR BOTONES*/
+.contenedor-botones {
+  text-align: center;
+}
+/*CONTENEDOR BOTONES*/
+
+/*CONTENEDOR ESPERANDO AL RIVAL*/
+.contenedor-esperando-al-rival {
   display: flex;
   justify-content: center;
   flex-direction: column;
   align-items: center;
+  padding: 20px 0;
 }
-
-
-.contenedor-spinner .texto-esperando {
+.contenedor-esperando-al-rival .texto-esperando-al-rival  {
   font-size: 32px;
   text-align: center;
 }
@@ -526,18 +417,12 @@ p {
   margin: 0 auto;
 }
 .progress-circular{
-  margin: 32px;
+  margin: 10px;
 }
+/*CONTENEDOR ESPERANDO AL RIVAL*/
 
 
-@keyframes aparecer {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
+
 @keyframes piedra {
   0% {
     transform: translateY(-300px) rotate(180deg);
@@ -603,27 +488,16 @@ p {
 }
 
 @media (max-width: 370px) {
-  .tablero-y-tiempo {
-    padding-top: 10px;
-  }
-  .area-de-juego .mensaje-final .jugadas .jugada-texto-vs {
+  .contenedor-jugadas .jugada-texto-vs {
     margin: 0;
-    font-size: 32px;
-  }
-  .area-de-juego .jugadas {
-    display: flex;
-    margin: 10px 0;
-    position: relative;
   }
   .tablero-de-puntos {
     transform: scale(0.8);
   }
-  .contenedor-spinner .texto-esperando {
-    font-size: 24px;
-    text-align: center;
-  }
-  .tiempo {
-    right: 10px;
+  .contenedor-jugadas .mensaje-final,
+  .contenedor-juega .contenedor-mensaje-jugar .mensaje-jugar {
+    font-size: 32px;
+    line-height: 1.5;
   }
 }
 </style>

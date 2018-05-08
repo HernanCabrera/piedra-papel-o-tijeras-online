@@ -39,24 +39,24 @@
   export default {
     data () {
       return {
-        partidas: firebase.database().ref('partidas'),
+        partidasRef: firebase.database().ref('partidas'),
         listaDePartidas: []
       }
     },
     created () {
-      this.partidas.on('child_added', snapshot => {
+      this.partidasRef.on('child_added', snapshot => {
         this.listaDePartidas.push({
           id: snapshot.key,
           titulo: snapshot.val().titulo,
           yaEmpezo: snapshot.val().yaEmpezo
         })
       })
-      this.partidas.on('child_removed', snapshot => {
+      this.partidasRef.on('child_removed', snapshot => {
         const eliminarPartida = this.listaDePartidas.find(partida => partida.id === snapshot.key)
         const index = this.listaDePartidas.indexOf(eliminarPartida)
         this.listaDePartidas.splice(index, 1)
       })
-      this.partidas.on('child_changed', snapshot => {
+      this.partidasRef.on('child_changed', snapshot => {
         if (typeof snapshot.key !== 'undefined') {
           if (typeof snapshot.key === 'string') {
             if (typeof snapshot.val().yaEmpezo !== 'undefined') {
@@ -66,6 +66,9 @@
           }
         }
       })
+    },
+    destroyed () {
+      this.partidasRef.off()
     }
   }
 </script>

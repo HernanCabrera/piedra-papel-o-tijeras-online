@@ -7,7 +7,7 @@
     </v-layout>
     <v-layout row>
       <v-flex xs12>
-        <form @submit.prevent="enCrearPartida">
+        <form @submit.prevent="crearPartida">
           <v-layout row>
             <v-flex xs12 sm6 offset-sm3>
               <v-text-field
@@ -22,7 +22,7 @@
             <v-flex xs12 sm6 offset-sm3>
               <v-btn
                 class="primary"
-                :disabled="!formIsValid"
+                :disabled="!formularioValido"
                 type="submit">Crear partida</v-btn>
             </v-flex>
           </v-layout>
@@ -33,47 +33,38 @@
 </template>
 
 <script>
-  import * as firebase from 'firebase'
   export default {
     data () {
       return {
         titulo: ''
       }
     },
+    watch: {
+      llavePartida (val) {
+        if (val !== '') {
+          const llavePartida = val
+          this.$store.commit('setLlavePartida', null)
+          this.$router.push('/partida/' + llavePartida)
+        }
+      }
+    },
     computed: {
-      formIsValid () {
+      formularioValido () {
         return this.titulo
       },
-      user () {
-        return this.$store.getters.user
+      llavePartida () {
+        return this.$store.getters.llavePartida
       }
     },
     methods: {
-      enCrearPartida () {
-        if (!this.formIsValid) {
+      crearPartida () {
+        if (!this.formularioValido) {
           return
         }
-        const partida = {
-          titulo: this.titulo,
-          yaEmpezo: false,
-          jugador1: {
-            jugada: '',
-            yaJugue: false,
-            jugadorId: this.user.id,
-            puntos: 0
-          },
-          jugador2: {
-            jugada: '',
-            yaJugue: false,
-            jugadorId: '',
-            puntos: 0
-          }
+        const partidaDatos = {
+          titulo: this.titulo
         }
-        const llavePartida = firebase.database().ref('partidas').push().key
-        let updates = {}
-        updates[llavePartida] = partida
-        firebase.database().ref('partidas').update(updates)
-        this.$router.push('/partida/' + llavePartida)
+        this.$store.dispatch('crearPartida', partidaDatos)
       }
     }
   }
